@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>RentTrack Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#eef2f7;color:#1a2332;font-family:'Plus Jakarta Sans',sans-serif;overflow-x:hidden}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes slideIn{from{transform:translateX(30px);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes bounce{0%,80%,100%{transform:scale(.7);opacity:.5}40%{transform:scale(1.1);opacity:1}}
+@keyframes toast{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:#c8d8e8;border-radius:4px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script>
+var e = React.createElement;
+var useState = React.useState;
+var useEffect = React.useEffect;
+var useMemo = React.useMemo;
+
+// ---- COLORS ----
+var P = '#0d7a5f';
+var PD = '#0a5c47';
+var PL = '#e8f5f1';
+var ACC = '#f0a500';
+var ACCL = '#fff8e6';
+var DNG = '#dc3545';
+var DNGL = '#fde8ea';
+var WRN = '#e67e22';
+var WRNL = '#fef5e7';
+var BG = '#eef2f7';
+var CARD = '#ffffff';
+var BRD = '#e2eaf2';
+var TXT = '#1a2332';
+var MUT = '#6b7d94';
+
+// ---- DEMO DATA ----
+var LANDLORD = {id:'l1',name:'James Kamau',biz:'Kamau Properties Ltd',email:'james@kamauproperties.co.ke',phone:'0722 345 678'};
+
+var PROPS = [
+  {id:'p1',name:'Westlands Heights',addr:'Westlands, Nairobi',type:'Residential'},
+  {id:'p2',name:'Mombasa Road Plaza',addr:'Mombasa Road, Nairobi',type:'Commercial'},
+  {id:'p3',name:'Kileleshwa Gardens',addr:'Kileleshwa, Nairobi',type:'Residential'}
+];
+
+var UNITS = [
+  {id:'u1',pid:'p1',pname:'Westlands Heights',num:'A1',floor:'1',rent:35000,status:'occupied'},
+  {id:'u2',pid:'p1',pname:'Westlands Heights',num:'A2',floor:'1',rent:35000,status:'occupied'},
+  {id:'u3',pid:'p1',pname:'Westlands Heights',num:'B1',floor:'2',rent:40000,status:'occupied'},
+  {id:'u4',pid:'p1',pname:'Westlands Heights',num:'B2',floor:'2',rent:40000,status:'vacant'},
+  {id:'u5',pid:'p2',pname:'Mombasa Road Plaza',num:'S1',floor:'G',rent:80000,status:'occupied'},
+  {id:'u6',pid:'p2',pname:'Mombasa Road Plaza',num:'S2',floor:'G',rent:75000,status:'occupied'},
+  {id:'u7',pid:'p2',pname:'Mombasa Road Plaza',num:'S3',floor:'1',rent:70000,status:'vacant'},
+  {id:'u8',pid:'p3',pname:'Kileleshwa Gardens',num:'C1',floor:'1',rent:55000,status:'occupied'},
+  {id:'u9',pid:'p3',pname:'Kileleshwa Gardens',num:'C2',floor:'1',rent:55000,status:'occupied'},
+  {id:'u10',pid:'p3',pname:'Kileleshwa Gardens',num:'C3',floor:'2',rent:60000,status:'occupied'}
+];
+
+var TENANTS = [
+  {id:'t1',uid:'u1',unit:'A1',prop:'Westlands Heights',name:'Grace Wanjiku',phone:'0711 234 567',email:'grace@email.com',idno:'12345678',rent:35000,deposit:70000,due:1,ls:'2023-01-01',le:'2025-01-01',pstatus:'paid'},
+  {id:'t2',uid:'u2',unit:'A2',prop:'Westlands Heights',name:'Peter Odhiambo',phone:'0722 345 678',email:'peter@email.com',idno:'23456789',rent:35000,deposit:70000,due:1,ls:'2023-03-01',le:'2025-03-01',pstatus:'overdue'},
+  {id:'t3',uid:'u3',unit:'B1',prop:'Westlands Heights',name:'Amina Hassan',phone:'0733 456 789',email:'amina@email.com',idno:'34567890',rent:40000,deposit:80000,due:5,ls:'2023-06-01',le:'2025-06-01',pstatus:'paid'},
+  {id:'t4',uid:'u5',unit:'S1',prop:'Mombasa Road Plaza',name:'Equity Bank Branch',phone:'0763 000 000',email:'branch@equity.co.ke',idno:'N/A',rent:80000,deposit:160000,due:1,ls:'2022-01-01',le:'2026-01-01',pstatus:'paid'},
+  {id:'t5',uid:'u6',unit:'S2',prop:'Mombasa Road Plaza',name:'Naivas Supermarket',phone:'0800 720 720',email:'naivas@naivas.co.ke',idno:'N/A',rent:75000,deposit:150000,due:1,ls:'2022-06-01',le:'2026-06-01',pstatus:'partial'},
+  {id:'t6',uid:'u8',unit:'C1',prop:'Kileleshwa Gardens',name:'Dr. Mary Achieng',phone:'0744 567 890',email:'mary@clinic.co.ke',idno:'45678901',rent:55000,deposit:110000,due:3,ls:'2023-09-01',le:'2025-09-01',pstatus:'paid'},
+  {id:'t7',uid:'u9',unit:'C2',prop:'Kileleshwa Gardens',name:'Samuel Kipchoge',phone:'0755 678 901',email:'samuel@email.com',idno:'56789012',rent:55000,deposit:110000,due:3,ls:'2024-01-01',le:'2026-01-01',pstatus:'overdue'},
+  {id:'t8',uid:'u10',unit:'C3',prop:'Kileleshwa Gardens',name:'Fatuma Ali',phone:'0766 789 012',email:'fatuma@email.com',idno:'67890123',rent:60000,deposit:120000,due:5,ls:'2024-03-01',le:'2026-03-01',pstatus:'paid'}
+];
+
+var PAYS = [
+  {id:'py1',tid:'t1',tname:'Grace Wanjiku',amt:35000,date:'2025-01-02',method:'M-Pesa',ref:'RGK7XY1234',status:'paid'},
+  {id:'py2',tid:'t3',tname:'Amina Hassan',amt:40000,date:'2025-01-05',method:'M-Pesa',ref:'ABC8KL5678',status:'paid'},
+  {id:'py3',tid:'t4',tname:'Equity Bank Branch',amt:80000,date:'2025-01-01',method:'Bank',ref:'EQT2025001',status:'paid'},
+  {id:'py4',tid:'t5',tname:'Naivas Supermarket',amt:50000,date:'2025-01-03',method:'Bank',ref:'NAI2025003',status:'partial'},
+  {id:'py5',tid:'t6',tname:'Dr. Mary Achieng',amt:55000,date:'2025-01-03',method:'M-Pesa',ref:'DEF9MN9012',status:'paid'},
+  {id:'py6',tid:'t8',tname:'Fatuma Ali',amt:60000,date:'2025-01-05',method:'M-Pesa',ref:'GHI0OP3456',status:'paid'},
+  {id:'py7',tid:'t1',tname:'Grace Wanjiku',amt:35000,date:'2024-12-02',method:'M-Pesa',ref:'RGK6XY1111',status:'paid'},
+  {id:'py8',tid:'t3',tname:'Amina Hassan',amt:40000,date:'2024-12-05',method:'M-Pesa',ref:'ABC7KL2222',status:'paid'}
+];
+
+// ---- HELPERS ----
+function kes(n) { return 'KES ' + (n||0).toLocaleString(); }
+function fmtDate(d) {
+  if (!d) return '--';
+  return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+}
+function initials(name) {
+  if (!name) return '??';
+  var parts = name.split(' ');
+  return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
+}
+
+// ---- UI ATOMS ----
+function Card(props) {
+  return e('div', {
+    onClick: props.onClick,
+    style: Object.assign({background:CARD,border:'1px solid '+BRD,borderRadius:14,boxShadow:'0 1px 4px rgba(0,0,0,0.05)'}, props.style||{})
+  }, props.children);
+}
+
+function Btn(props) {
+  var variants = {
+    primary: {background:'linear-gradient(135deg,'+P+','+PD+')',color:'#fff',boxShadow:'0 4px 12px rgba(13,122,95,0.25)'},
+    ghost:   {background:'transparent',color:MUT,border:'1.5px solid '+BRD},
+    teal:    {background:PL,color:P,border:'1px solid rgba(13,122,95,0.25)'},
+    amber:   {background:ACCL,color:ACC,border:'1px solid rgba(240,165,0,0.25)'},
+    danger:  {background:DNGL,color:DNG,border:'1px solid rgba(220,53,69,0.25)'}
+  };
+  var v = variants[props.v||'primary'];
+  return e('button', {
+    onClick: props.onClick,
+    disabled: props.disabled,
+    style: Object.assign({padding:'11px 18px',borderRadius:10,fontSize:13,fontWeight:600,cursor:'pointer',border:'none',fontFamily:'inherit',width:props.full?'100%':'auto'}, v, props.style||{})
+  }, props.children);
+}
+
+function Inp(props) {
+  return e('input', {
+    type: props.type||'text',
+    value: props.value,
+    onChange: props.onChange,
+    placeholder: props.placeholder,
+    style: Object.assign({width:'100%',background:BG,border:'1.5px solid '+BRD,borderRadius:10,color:TXT,padding:'11px 14px',fontSize:14,outline:'none',fontFamily:'inherit'}, props.style||{})
+  });
+}
+
+function Sel(props) {
+  return e('select', {
+    value: props.value,
+    onChange: props.onChange,
+    style: {width:'100%',background:BG,border:'1.5px solid '+BRD,borderRadius:10,color:TXT,padding:'11px 14px',fontSize:14,outline:'none',fontFamily:'inherit',cursor:'pointer'}
+  }, props.children);
+}
+
+function FG(props) {
+  return e('div', {style:Object.assign({marginBottom:14},props.style||{})},
+    e('div', {style:{fontSize:11,color:MUT,marginBottom:5,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.07em'}}, props.label),
+    props.children
+  );
+}
+
+function Ava(props) {
+  var sz = props.size||38;
+  return e('div', {style:{width:sz,height:sz,borderRadius:'50%',background:'linear-gradient(135deg,'+P+','+PD+')',display:'flex',alignItems:'center',justifyContent:'center',fontSize:sz*0.32,fontWeight:700,color:'#fff',flexShrink:0}}, initials(props.name));
+}
+
+function Badge(props) {
+  var s = props.status;
+  var map = {
+    paid:    {bg:PL,   color:P,   label:'Paid'},
+    overdue: {bg:DNGL, color:DNG, label:'Overdue'},
+    partial: {bg:WRNL, color:WRN, label:'Partial'},
+    pending: {bg:ACCL, color:ACC, label:'Pending'},
+    vacant:  {bg:'#f5f5f5',color:MUT,label:'Vacant'},
+    occupied:{bg:PL,   color:P,   label:'Occupied'}
+  };
+  var cfg = map[s]||map.pending;
+  return e('span', {style:{display:'inline-flex',alignItems:'center',gap:4,padding:'3px 10px',borderRadius:20,fontSize:10,fontWeight:700,background:cfg.bg,color:cfg.color,whiteSpace:'nowrap',textTransform:'uppercase',letterSpacing:'0.04em'}},
+    e('span', {style:{width:5,height:5,borderRadius:'50%',background:cfg.color,flexShrink:0}}),
+    cfg.label
+  );
+}
+
+function Hdr(props) {
+  return e('div', {style:{padding:'15px 20px',borderBottom:'1px solid '+BRD,background:'#fff',display:'flex',alignItems:'center',flexShrink:0,gap:10}},
+    props.back && e('span', {onClick:props.onBack,style:{cursor:'pointer',color:MUT,fontSize:22,lineHeight:1,marginRight:4}}, '<'),
+    e('div', {style:{flex:1}},
+      e('div', {style:{fontFamily:"'Playfair Display',serif",fontSize:21,fontWeight:700,color:TXT}}, props.title),
+      props.sub && e('div', {style:{fontSize:12,color:MUT,marginTop:1}}, props.sub)
+    ),
+    props.action && e(Btn, {onClick:props.onAction,style:{padding:'9px 16px',fontSize:12}}, props.action)
+  );
+}
+
+function SecTitle(props) {
+  return e('div', {style:{fontSize:11,textTransform:'uppercase',letterSpacing:'0.12em',color:MUT,marginBottom:12,fontWeight:700}}, props.children);
+}
+
+function Toast(props) {
+  useEffect(function() {
+    var t = setTimeout(props.onHide, 3000);
+    return function() { clearTimeout(t); };
+  }, []);
+  return e('div', {style:{position:'fixed',bottom:90,left:'50%',transform:'translateX(-50%)',background:TXT,borderRadius:24,padding:'11px 22px',fontSize:13,color:'#fff',zIndex:999,animation:'toast 0.25s ease',whiteSpace:'nowrap',boxShadow:'0 8px 24px rgba(0,0,0,0.18)',fontWeight:500}}, props.msg);
+}
+
+// ---- DASHBOARD ----
+function Dashboard(props) {
+  var payments = props.payments;
+  var tenants = props.tenants;
+  var units = props.units;
+  var properties = props.properties;
+  var setTab = props.setTab;
+
+  var collected = 0;
+  for (var i=0; i<payments.length; i++) {
+    var p = payments[i];
+    if (p.status === 'paid' && p.date && p.date.indexOf('2025-01') === 0) {
+      collected += p.amt;
+    }
+  }
+
+  var expected = 0;
+  for (var i=0; i<tenants.length; i++) { expected += tenants[i].rent; }
+
+  var overdue = [];
+  for (var i=0; i<tenants.length; i++) {
+    if (tenants[i].pstatus === 'overdue') overdue.push(tenants[i]);
+  }
+
+  var vacant = 0;
+  for (var i=0; i<units.length; i++) {
+    if (units[i].status === 'vacant') vacant++;
+  }
+
+  var occupancy = units.length ? Math.round(((units.length - vacant) / units.length) * 100) : 0;
+  var rate = expected ? Math.round((collected / expected) * 100) : 0;
+
+  return e(React.Fragment, null,
+    e('div', {style:{background:'linear-gradient(135deg,'+P+','+PD+')',padding:'20px 20px 28px',flexShrink:0}},
+      e('div', {style:{display:'flex',alignItems:'center',gap:10,marginBottom:20}},
+        e('div', {style:{width:38,height:38,borderRadius:10,background:'rgba(255,255,255,0.2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}, '🏠'),
+        e('div', null,
+          e('div', {style:{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:'#fff'}}, 'RentTrack Pro'),
+          e('div', {style:{fontSize:11,color:'rgba(255,255,255,0.7)'}}, LANDLORD.biz)
+        )
+      ),
+      e('div', {style:{background:'rgba(255,255,255,0.12)',borderRadius:14,padding:'14px 16px',border:'1px solid rgba(255,255,255,0.2)'}},
+        e('div', {style:{fontSize:11,color:'rgba(255,255,255,0.7)',marginBottom:4,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.08em'}}, 'January 2025 - Collected'),
+        e('div', {style:{fontFamily:"'Playfair Display',serif",fontSize:34,fontWeight:700,color:'#fff'}}, kes(collected)),
+        e('div', {style:{fontSize:12,color:'rgba(255,255,255,0.7)',marginTop:4}}, 'of ' + kes(expected) + ' expected  |  ' + rate + '% collection rate')
+      )
+    ),
+    e('div', {style:{flex:1,overflowY:'auto',padding:16}},
+      e('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:16}},
+        e(Card, {style:{padding:14}},
+          e('div', {style:{fontSize:9,color:MUT,textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:4,fontWeight:600}}, 'Properties'),
+          e('div', {style:{fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:700,color:TXT}}, properties.length),
+          e('div', {style:{fontSize:11,color:MUT,marginTop:2}}, units.length + ' total units')
+        ),
+        e(Card, {style:{padding:14}},
+          e('div', {style:{fontSize:9,color:MUT,textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:4,fontWeight:600}}, 'Occupancy'),
+          e('div', {style:{fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:700,color:P}}, occupancy + '%'),
+          e('div', {style:{fontSize:11,color:MUT,marginTop:2}}, vacant + ' vacant units')
+        ),
+        e(Card, {style:{padding:14}},
+          e('div', {style:{fontSize:9,color:MUT,textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:4,fontWeight:600}}, 'Tenants'),
+          e('div', {style:{fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:700,color:TXT}}, tenants.length),
+          e('div', {style:{fontSize:11,color:MUT,marginTop:2}}, 'Active leases')
+        ),
+        e(Card, {style:{padding:14}},
+          e('div', {style:{fontSize:9,color:MUT,textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:4,fontWeight:600}}, 'Overdue'),
+          e('div', {style:{fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:700,color:overdue.length?DNG:P}}, overdue.length),
+          e('div', {style:{fontSize:11,color:MUT,marginTop:2}}, overdue.length ? 'Need attention' : 'All clear')
+        )
+      ),
+      overdue.length > 0 && e('div', {style:{marginBottom:16}},
+        e(SecTitle, null, 'Overdue Rent'),
+        overdue.map(function(t) {
+          return e(Card, {key:t.id,style:{padding:'12px 14px',marginBottom:8,border:'1px solid rgba(220,53,69,0.2)',cursor:'pointer'},onClick:function(){setTab('tenants');}},
+            e('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
+              e('div', {style:{display:'flex',alignItems:'center',gap:10}},
+                e(Ava, {name:t.name,size:36}),
+                e('div', null,
+                  e('div', {style:{fontSize:13,fontWeight:600,color:TXT}}, t.name),
+                  e('div', {style:{fontSize:11,color:MUT,marginTop:1}}, t.prop + ' - Unit ' + t.unit)
+                )
+              ),
+              e('div', {style:{textAlign:'right'}},
+                e('div', {style:{fontSize:13,fontWeight:700,color:DNG}}, kes(t.rent)),
+                e('div', {style:{marginTop:4}}, e(Badge, {status:'overdue'}))
+              )
+            )
+          );
+        }),
+        e(Btn, {v:'teal',full:true,style:{marginTop:8,padding:'10px'},onClick:function(){props.showT('SMS sent to all overdue tenants');}}, 'Send SMS Reminders to All Overdue Tenants')
+      ),
+      e('div', {style:{marginBottom:16}},
+        e(SecTitle, null, 'Recent Payments'),
+        payments.slice(0,4).map(function(p) {
+          return e(Card, {key:p.id,style:{padding:'11px 14px',marginBottom:8}},
+            e('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
+              e('div', null,
+                e('div', {style:{fontSize:13,fontWeight:500,color:TXT}}, p.tname),
+                e('div', {style:{fontSize:11,color:MUT,marginTop:1}}, fmtDate(p.date) + ' - ' + p.method)
+              ),
+              e('div', {style:{textAlign:'right'}},
+                e('div', {style:{fontSize:13,fontWeight:700,color:P}}, kes(p.amt)),
+                e('div', {style:{marginTop:3}}, e(Badge, {status:p.status}))
+              )
+            )
+          );
+        })
+      )
+    )
+  );
+}
+
+// ---- PROPERTIES ----
+function Properties(props) {
+  var units = props.units;
+  var tenants = props.tenants;
+  var showT = props.showT;
+  var sel = props.sel;
+  var setSel = props.setSel;
+
+  if (sel) {
+    var pu = units.filter(function(u){return u.pid===sel.id;});
+    var pt = tenants.filter(function(t){
+      for(var i=0;i<pu.length;i++){if(pu[i].id===t.uid)return true;}
+      return false;
+    });
+    var total = 0;
+    for(var i=0;i<pt.length;i++){total+=pt[i].rent;}
+    var occ = pu.filter(function(u){return u.status==='occupied';}).length;
+    var vac = pu.filter(function(u){return u.status==='vacant';}).length;
+
+    return e('div', {style:{display:'flex',flexDirection:'column',height:'100%',animation:'slideIn 0.2s ease'}},
+      e(Hdr, {title:sel.name,sub:sel.addr,back:true,onBack:function(){setSel(null);}}),
+      e('div', {style:{flex:1,overflowY:'auto',padding:16}},
+        e('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:16}},
+          e(Card, {style:{padding:14}},
+            e('div', {style:{fontSize:9,color:MUT,textTransform:'uppercase',fontWeight:600,marginBottom:4}}, 'Monthly Rent'),
+            e('div', {style:{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:P}}, kes(total))
+          ),
+          e(Card, {style:{padding:14}},
+            e('div', {style:{fontSize:9,color:MUT,textTransform:'uppercase',fontWeight:600,marginBottom:4}}, 'Units'),
+            e('div', {style:{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:TXT}}, pu.length)
+          ),
+          e(Card, {style:{padding:14}},
+            e('div', {style:{fontSize:9,color:MUT,textTransform:'uppercase',fontWeight:600,marginBottom:4}}, 'Occupied'),
+            e('div', {style:{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:P}}, occ)
+          ),
+          e(Card, {style:{padding:14}},
+            e('div', {style:{fontSize:9,color:MUT,textTransform:'uppercase',fontWeight:600,marginBottom:4}}, 'Vacant'),
+            e('div', {style:{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:vac?DNG:P}}, vac)
+          )
+        ),
+        e(SecTitle, null, 'Units'),
+        pu.map(function(u) {
+          var t = null;
+          for(var i=0;i<tenants.length;i++){if(tenants[i].uid===u.id){t=tenants[i];break;}}
+          return e(Card, {key:u.id,style:{padding:'12px 14px',marginBottom:8}},
+            e('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
+              e('div', null,
+                e('div', {style:{fontSize:13,fontWeight:600,color:TXT}}, 'Unit ' + u.num + ' - Floor ' + u.floor),
+                t && e('div', {style:{fontSize:11,color:MUT,marginTop:2}}, t.name)
+              ),
+              e('div', {style:{textAlign:'right'}},
+                e('div', {style:{fontSize:12,fontWeight:600,color:P}}, kes(u.rent) + '/mo'),
+                e('div', {style:{marginTop:4}}, e(Badge, {status:u.status}))
+              )
+            )
+          );
+        })
+      )
+    );
+  }
+
+  return e(React.Fragment, null,
+    e(Hdr, {title:'Properties',sub:props.properties.length+' properties - '+units.length+' units',action:'+ Add',onAction:function(){showT('Connect database to add properties');}}),
+    e('div', {style:{flex:1,overflowY:'auto',padding:16}},
+      props.properties.map(function(prop) {
+        var pu = units.filter(function(u){return u.pid===prop.id;});
+        var pt = tenants.filter(function(t){
+          for(var i=0;i<pu.length;i++){if(pu[i].id===t.uid)return true;}
+          return false;
+        });
+        var monthly = 0;
+        for(var i=0;i<pt.length;i++){monthly+=pt[i].rent;}
+        var vac = pu.filter(function(u){return u.status==='vacant';}).length;
+
+        return e(Card, {key:prop.id,style:{marginBottom:14,overflow:'hidden',cursor:'pointer'},onClick:function(){setSel(prop);}},
+          e('div', {style:{background:'linear-gradient(135deg,rgba(13,122,95,0.08),rgba(13,122,95,0.03))',padding:'14px 16px',borderBottom:'1px solid '+BRD}},
+            e('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}},
+              e('div', null,
+                e('div', {style:{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700,color:TXT}}, prop.name),
+                e('div', {style:{fontSize:12,color:MUT,marginTop:2}}, prop.addr),
+                e('div', {style:{fontSize:10,color:P,marginTop:4,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.06em'}}, prop.type)
+              ),
+              e('div', {style:{textAlign:'right'}},
+                e('div', {style:{fontSize:16,fontWeight:700,color:P}}, kes(monthly)),
+                e('div', {style:{fontSize:10,color:MUT,marginTop:1}}, 'per month')
+              )
+            )
+          ),
+          e('div', {style:{padding:'10px 16px',display:'flex',justifyContent:'space-between',alignItems:'center'}},
+            e('div', {style:{display:'flex',gap:16}},
+              e('div', null,
+                e('div', {style:{fontSize:18,fontWeight:700,color:TXT,fontFamily:"'Playfair Display',serif"}}, pu.length),
+                e('div', {style:{fontSize:10,color:MUT}}, 'Units')
+              ),
+              e('div', null,
+                e('div', {style:{fontSize:18,fontWeight:700,color:P,fontFamily:"'Playfair Display',serif"}}, pu.length - vac),
+                e('div', {style:{fontSize:10,color:MUT}}, 'Occupied')
+              ),
+              e('div', null,
+                e('div', {style:{fontSize:18,fontWeight:700,color:vac?DNG:P,fontFamily:"'Playfair Display',serif"}}, vac),
+                e('div', {style:{fontSize:10,color:MUT}}, 'Vacant')
+              )
+            ),
+            e('span', {style:{color:MUT,fontSize:20}}, '>')
+          )
+        );
+      })
+    )
+  );
+}
+
+// ---- TENANTS ----
+function Tenants(props) {
+  var tenants = props.tenants;
+  var payments = props.payments;
+  var showT = props.showT;
+  var sel = props.sel;
+  var setSel = props.setSel;
+  var search = props.search;
+  var setSearch = props.setSearch;
+  var filter = props.filter;
+  var setFilter = props.setFilter;
+
+  if (sel) {
+    var tp = payments.filter(function(p){return p.tid===sel.id;});
+    var totalPaid = 0;
+    for(var i=0;i<tp.length;i++){if(tp[i].status==='paid')totalPaid+=tp[i].amt;}
+
+    return e('div', {style:{display:'flex',flexDirection:'column',height:'100%',animation:'slideIn 0.2s ease'}},
+      e(Hdr, {title:sel.name,sub:'Unit '+sel.unit+' - '+sel.prop,back:true,onBack:function(){setSel(null);}}),
+      e('div', {style:{flex:1,overflowY:'auto',padding:16}},
+        e('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:16}},
+          e(Card, {style:{padding:14}},
+            e('div', {style:{fontSize:9,color:MUT,textTransform:'uppercase',fontWeight:600,marginBottom:4}}, 'Monthly Rent'),
+            e('div', {style:{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:P}}, kes(sel.rent))
+          ),
+          e(Card, {style:{padding:14}},
+            e('div', {style:{fontSize:9,color:MUT,textTransform:'uppercase',fontWeight:600,marginBottom:4}}, 'Total Paid'),
+            e('div', {style:{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:P}}, kes(totalPaid))
+          ),
+          e(Card, {style:{padding:14}},
+            e('div', {style:{fontSize:9,color:MUT,textTransform:'uppercase',fontWeight:600,marginBottom:4}}, 'Deposit'),
+            e('div', {style:{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:TXT}}, kes(sel.deposit))
+          ),
+          e(Card, {style:{padding:14}},
+            e('div', {style:{fontSize:9,color:MUT,textTransform:'uppercase',fontWeight:600,marginBottom:4}}, 'Status'),
+            e('div', {style:{marginTop:4}}, e(Badge, {status:sel.pstatus}))
+          )
+        ),
+        e(Card, {style:{padding:14,marginBottom:12}},
+          e(SecTitle, null, 'Contact Details'),
+          e('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px 16px'}},
+            [['Phone',sel.phone],['Email',sel.email||'--'],['ID Number',sel.idno||'--'],['Due Day','Day '+sel.due],['Lease Start',fmtDate(sel.ls)],['Lease End',fmtDate(sel.le)]].map(function(item) {
+              return e('div', {key:item[0]},
+                e('div', {style:{fontSize:10,color:MUT,fontWeight:600,textTransform:'uppercase',marginBottom:2}}, item[0]),
+                e('div', {style:{fontSize:13,color:TXT}}, item[1])
+              );
+            })
+          )
+        ),
+        e('div', {style:{display:'flex',gap:8,marginBottom:14}},
+          e(Btn, {v:'teal',full:true,style:{padding:'11px'},onClick:function(){showT('SMS sent to '+sel.name);}}, 'Send SMS Reminder'),
+          e(Btn, {v:'amber',full:true,style:{padding:'11px'},onClick:function(){showT('Invoice generated for '+sel.name);}}, 'Generate Invoice')
+        ),
+        e(Card, {style:{padding:14}},
+          e(SecTitle, null, 'Payment History'),
+          tp.length === 0 && e('div', {style:{fontSize:13,color:MUT,padding:'8px 0'}}, 'No payments recorded yet'),
+          tp.map(function(p) {
+            return e('div', {key:p.id,style:{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 0',borderBottom:'1px solid '+BRD}},
+              e('div', null,
+                e('div', {style:{fontSize:13,fontWeight:500,color:TXT}}, kes(p.amt)),
+                e('div', {style:{fontSize:11,color:MUT,marginTop:2}}, fmtDate(p.date) + ' - ' + p.method + ' - ' + p.ref)
+              ),
+              e(Badge, {status:p.status})
+            );
+          })
+        )
+      )
+    );
+  }
+
+  var filters = ['all','paid','overdue','partial','pending'];
+  var filtered = tenants.filter(function(t) {
+    if (filter !== 'all' && t.pstatus !== filter) return false;
+    if (search) {
+      var s = search.toLowerCase();
+      return t.name.toLowerCase().indexOf(s) >= 0 || t.phone.indexOf(s) >= 0 || t.unit.toLowerCase().indexOf(s) >= 0;
+    }
+    return true;
+  });
+
+  return e(React.Fragment, null,
+    e(Hdr, {title:'Tenants',sub:tenants.length+' tenants',action:'+ Add',onAction:function(){showT('Connect database to add tenants');}}),
+    e('div', {style:{padding:'10px 16px',borderBottom:'1px solid '+BRD,background:'#fff',flexShrink:0}},
+      e(Inp, {value:search,onChange:function(ev){setSearch(ev.target.value);},placeholder:'Search tenants, units...'}),
+      e('div', {style:{display:'flex',gap:6,marginTop:8,overflowX:'auto'}},
+        filters.map(function(f) {
+          var active = filter === f;
+          return e('button', {key:f,onClick:function(){setFilter(f);},style:{padding:'5px 12px',borderRadius:20,fontSize:11,cursor:'pointer',border:'1.5px solid '+(active?P:BRD),color:active?P:MUT,background:active?PL:'transparent',fontFamily:'inherit',whiteSpace:'nowrap',fontWeight:active?600:400,textTransform:'capitalize'}}, f);
+        })
+      )
+    ),
+    e('div', {style:{flex:1,overflowY:'auto',padding:16}},
+      filtered.length === 0 && e('div', {style:{textAlign:'center',padding:40,color:MUT}}, 'No tenants found'),
+      filtered.map(function(t) {
+        return e(Card, {key:t.id,style:{marginBottom:10,cursor:'pointer'},onClick:function(){setSel(t);}},
+          e('div', {style:{padding:'13px 14px'}},
+            e('div', {style:{display:'flex',alignItems:'center',gap:12}},
+              e(Ava, {name:t.name,size:42}),
+              e('div', {style:{flex:1,minWidth:0}},
+                e('div', {style:{fontSize:14,fontWeight:600,color:TXT}}, t.name),
+                e('div', {style:{fontSize:11,color:MUT,marginTop:2}}, t.prop + ' - Unit ' + t.unit),
+                e('div', {style:{fontSize:11,color:MUT}}, t.phone)
+              ),
+              e('div', {style:{textAlign:'right',flexShrink:0}},
+                e('div', {style:{fontSize:13,fontWeight:700,color:P}}, kes(t.rent)),
+                e('div', {style:{marginTop:5}}, e(Badge, {status:t.pstatus}))
+              )
+            )
+          )
+        );
+      })
+    )
+  );
+}
+
+// ---- PAYMENTS ----
+function Payments(props) {
+  var tenants = props.tenants;
+  var payments = props.payments;
+  var setPayments = props.setPayments;
+  var showT = props.showT;
+  var filter = props.filter;
+  var setFilter = props.setFilter;
+  var showNew = props.showNew;
+  var setShowNew = props.setShowNew;
+
+  var collected = 0;
+  for(var i=0;i<payments.length;i++){
+    var p = payments[i];
+    if(p.status==='paid'&&p.date&&p.date.indexOf('2025-01')===0){collected+=p.amt;}
+  }
+
+  var filtered = payments.filter(function(p){return filter==='all'||p.status===filter;});
+
+  var newP = props.newP;
+  var setNewP = props.setNewP;
+
+  function save() {
+    if (!newP.tid || !newP.amt) { showT('Select tenant and enter amount'); return; }
+    var t = null;
+    for(var i=0;i<tenants.length;i++){if(tenants[i].id===newP.tid){t=tenants[i];break;}}
+    var today = new Date().toISOString().split('T')[0];
+    var pay = {id:'py'+Date.now(),tid:newP.tid,tname:t?t.name:'',amt:parseInt(newP.amt),date:newP.date||today,method:newP.method,ref:newP.ref,status:'paid'};
+    setPayments([pay].concat(payments));
+    setShowNew(false);
+    setNewP({tid:'',amt:'',date:today,method:'M-Pesa',ref:''});
+    showT('Payment recorded');
+  }
+
+  return e(React.Fragment, null,
+    e(Hdr, {title:'Payments',sub:'January 2025',action:'+ Record',onAction:function(){setShowNew(true);}}),
+    e('div', {style:{padding:'10px 16px',borderBottom:'1px solid '+BRD,background:'#fff',flexShrink:0}},
+      e('div', {style:{background:'linear-gradient(135deg,'+P+','+PD+')',borderRadius:12,padding:'13px 16px',marginBottom:10}},
+        e('div', {style:{fontSize:10,color:'rgba(255,255,255,0.7)',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:4}}, 'January 2025 - Collected'),
+        e('div', {style:{fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:700,color:'#fff'}}, kes(collected))
+      ),
+      e('div', {style:{display:'flex',gap:6,overflowX:'auto'}},
+        ['all','paid','partial','pending'].map(function(f) {
+          var active = filter === f;
+          return e('button', {key:f,onClick:function(){setFilter(f);},style:{padding:'5px 12px',borderRadius:20,fontSize:11,cursor:'pointer',border:'1.5px solid '+(active?P:BRD),color:active?P:MUT,background:active?PL:'transparent',fontFamily:'inherit',whiteSpace:'nowrap',fontWeight:active?600:400,textTransform:'capitalize'}}, f);
+        })
+      )
+    ),
+    e('div', {style:{flex:1,overflowY:'auto',padding:16}},
+      filtered.length===0&&e('div',{style:{textAlign:'center',padding:40,color:MUT}},'No payments found'),
+      filtered.map(function(p) {
+        return e(Card, {key:p.id,style:{padding:'13px 14px',marginBottom:8}},
+          e('div', {style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}},
+            e('div', {style:{flex:1}},
+              e('div', {style:{fontSize:14,fontWeight:600,color:TXT}}, p.tname),
+              e('div', {style:{fontSize:11,color:MUT,marginTop:2}}, fmtDate(p.date) + ' - ' + p.method),
+              p.ref && e('div', {style:{fontSize:10,color:MUT,marginTop:1}}, 'Ref: ' + p.ref)
+            ),
+            e('div', {style:{textAlign:'right'}},
+              e('div', {style:{fontSize:15,fontWeight:700,color:P}}, kes(p.amt)),
+              e('div', {style:{marginTop:5}}, e(Badge, {status:p.status}))
+            )
+          )
+        );
+      })
+    ),
+    showNew && e('div', {style:{position:'fixed',inset:0,background:'rgba(0,0,0,0.45)',zIndex:200,display:'flex',flexDirection:'column',justifyContent:'flex-end'}},
+      e('div', {onClick:function(){setShowNew(false);},style:{flex:1}}),
+      e('div', {style:{background:'#fff',borderRadius:'20px 20px 0 0',padding:20,animation:'slideUp 0.3s ease',maxHeight:'90vh',overflowY:'auto'}},
+        e('div', {style:{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:TXT,marginBottom:16}}, 'Record Payment'),
+        e(FG, {label:'Tenant'},
+          e(Sel, {value:newP.tid,onChange:function(ev){setNewP(Object.assign({},newP,{tid:ev.target.value}));}},
+            e('option', {value:''}, 'Select tenant...'),
+            tenants.map(function(t){return e('option',{key:t.id,value:t.id},t.name+' - Unit '+t.unit);})
+          )
+        ),
+        e(FG, {label:'Amount (KES)'},
+          e(Inp, {value:newP.amt,onChange:function(ev){setNewP(Object.assign({},newP,{amt:ev.target.value}));},placeholder:'35000',type:'number'})
+        ),
+        e('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}},
+          e(FG, {label:'Date'},
+            e(Inp, {type:'date',value:newP.date,onChange:function(ev){setNewP(Object.assign({},newP,{date:ev.target.value}));}})
+          ),
+          e(FG, {label:'Method'},
+            e(Sel, {value:newP.method,onChange:function(ev){setNewP(Object.assign({},newP,{method:ev.target.value}));}},
+              ['M-Pesa','Bank','Cash','Cheque'].map(function(m){return e('option',{key:m,value:m},m);})
+            )
+          )
+        ),
+        e(FG, {label:'Reference'},
+          e(Inp, {value:newP.ref,onChange:function(ev){setNewP(Object.assign({},newP,{ref:ev.target.value}));},placeholder:'e.g. RGK7XY1234'})
+        ),
+        e('div', {style:{display:'flex',gap:8}},
+          e(Btn, {v:'ghost',full:true,onClick:function(){setShowNew(false);}}, 'Cancel'),
+          e(Btn, {full:true,onClick:save}, 'Record Payment')
+        )
+      )
+    )
+  );
+}
+
+// ---- REPORTS ----
+function Reports(props) {
+  var tenants = props.tenants;
+  var payments = props.payments;
+  var units = props.units;
+  var showT = props.showT;
+
+  var collected = 0;
+  for(var i=0;i<payments.length;i++){
+    var p=payments[i];
+    if(p.status==='paid'&&p.date&&p.date.indexOf('2025-01')===0)collected+=p.amt;
+  }
+  var expected = 0;
+  for(var i=0;i<tenants.length;i++){expected+=tenants[i].rent;}
+  var rate = expected?Math.round((collected/expected)*100):0;
+  var occ = units.filter(function(u){return u.status==='occupied';}).length;
+  var occRate = units.length?Math.round((occ/units.length)*100):0;
+  var overdue = tenants.filter(function(t){return t.pstatus==='overdue';});
+  var partial = tenants.filter(function(t){return t.pstatus==='partial';});
+  var janPays = payments.filter(function(p){return p.date&&p.date.indexOf('2025-01')===0;});
+
+  return e(React.Fragment, null,
+    e(Hdr, {title:'Reports',sub:'January 2025'}),
+    e('div', {style:{flex:1,overflowY:'auto',padding:16}},
+      e('div', {style:{background:'linear-gradient(135deg,'+P+','+PD+')',borderRadius:16,padding:16,marginBottom:16}},
+        e('div', {style:{fontSize:10,color:'rgba(255,255,255,0.7)',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:4}}, 'January 2025 Summary'),
+        e('div', {style:{fontFamily:"'Playfair Display',serif",fontSize:32,fontWeight:700,color:'#fff'}}, kes(collected)),
+        e('div', {style:{fontSize:12,color:'rgba(255,255,255,0.7)',marginTop:4}}, 'Collected of '+kes(expected)+' expected'),
+        e('div', {style:{marginTop:12,display:'flex',gap:20}},
+          e('div', null,
+            e('div', {style:{fontSize:20,fontWeight:700,color:'#fff'}}, rate+'%'),
+            e('div', {style:{fontSize:10,color:'rgba(255,255,255,0.7)'}}, 'Collection Rate')
+          ),
+          e('div', null,
+            e('div', {style:{fontSize:20,fontWeight:700,color:'#fff'}}, occRate+'%'),
+            e('div', {style:{fontSize:10,color:'rgba(255,255,255,0.7)'}}, 'Occupancy')
+          ),
+          e('div', null,
+            e('div', {style:{fontSize:20,fontWeight:700,color:'#fff'}}, overdue.length),
+            e('div', {style:{fontSize:10,color:'rgba(255,255,255,0.7)'}}, 'Overdue')
+          )
+        )
+      ),
+      e('div', {style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:16}},
+        e(Card, {style:{padding:14}},
+          e('div', {style:{fontSize:9,color:MUT,textTransform:'uppercase',fontWeight:600,marginBottom:4}}, 'Tenants'),
+          e('div', {style:{fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:700,color:TXT}}, tenants.length)
+        ),
+        e(Card, {style:{padding:14}},
+          e('div', {style:{fontSize:9,color:MUT,textTransform:'uppercase',fontWeight:600,marginBottom:4}}, 'Partial'),
+          e('div', {style:{fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:700,color:WRN}}, partial.length)
+        ),
+        e(Card, {style:{padding:14}},
+          e('div', {style:{fontSize:9,color:MUT,textTransform:'uppercase',fontWeight:600,marginBottom:4}}, 'Payments'),
+          e('div', {style:{fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:700,color:P}}, janPays.length)
+        ),
+        e(Card, {style:{padding:14}},
+          e('div', {style:{fontSize:9,color:MUT,textTransform:'uppercase',fontWeight:600,marginBottom:4}}, 'Vacant Units'),
+          e('div', {style:{fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:700,color:units.length-occ?DNG:P}}, units.length-occ)
+        )
+      ),
+      e(Card, {style:{padding:14,marginBottom:12}},
+        e(SecTitle, null, 'Payment Breakdown'),
+        janPays.length===0&&e('div',{style:{fontSize:12,color:MUT}},'No payments this month'),
+        janPays.map(function(p) {
+          return e('div', {key:p.id,style:{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'9px 0',borderBottom:'1px solid '+BRD}},
+            e('div', null,
+              e('div', {style:{fontSize:13,fontWeight:500,color:TXT}}, p.tname),
+              e('div', {style:{fontSize:11,color:MUT,marginTop:1}}, fmtDate(p.date))
+            ),
+            e('div', {style:{textAlign:'right'}},
+              e('div', {style:{fontSize:13,fontWeight:700,color:P}}, kes(p.amt)),
+              e('div', {style:{marginTop:3}}, e(Badge, {status:p.status}))
+            )
+          );
+        })
+      ),
+      e(Btn, {v:'teal',full:true,style:{padding:'13px',marginBottom:8},onClick:function(){showT('Report exported to PDF');}}, 'Export Full Report'),
+      e(Btn, {v:'amber',full:true,style:{padding:'13px'},onClick:function(){showT('SMS sent to all overdue tenants');}}, 'Send SMS to All Overdue')
+    )
+  );
+}
+
+// ---- MORE ----
+function More(props) {
+  var tenants = props.tenants;
+  var showT = props.showT;
+
+  return e(React.Fragment, null,
+    e(Hdr, {title:'More'}),
+    e('div', {style:{flex:1,overflowY:'auto',padding:16}},
+      e(Card, {style:{padding:16,marginBottom:14}},
+        e('div', {style:{display:'flex',alignItems:'center',gap:14}},
+          e(Ava, {name:LANDLORD.name,size:52}),
+          e('div', null,
+            e('div', {style:{fontSize:16,fontWeight:700,color:TXT}}, LANDLORD.biz),
+            e('div', {style:{fontSize:12,color:MUT,marginTop:2}}, LANDLORD.email),
+            e('div', {style:{fontSize:11,color:P,marginTop:4,fontWeight:600}}, 'Pro Plan - KES 2,500/month')
+          )
+        )
+      ),
+      e(Card, {style:{padding:16,marginBottom:14}},
+        e(SecTitle, null, 'Bulk Actions'),
+        e('div', {style:{display:'flex',flexDirection:'column',gap:10}},
+          e(Btn, {v:'teal',full:true,style:{padding:'13px'},onClick:function(){showT('SMS sent to all '+tenants.length+' tenants');}}, 'Send SMS to All Tenants'),
+          e(Btn, {v:'amber',full:true,style:{padding:'13px'},onClick:function(){showT(tenants.length+' invoices generated');}}, 'Generate All Invoices'),
+          e(Btn, {v:'ghost',full:true,style:{padding:'13px'},onClick:function(){showT('Report exported successfully');}}, 'Export Monthly Report')
+        )
+      ),
+      e(Card, {style:{padding:16,marginBottom:14}},
+        e(SecTitle, null, 'Subscription Payment'),
+        e('div', {style:{background:BG,borderRadius:10,padding:'12px 14px',marginBottom:8,display:'flex',justifyContent:'space-between',alignItems:'center'}},
+          e('div', null,
+            e('div', {style:{fontSize:11,color:MUT,marginBottom:2}}, 'M-Pesa Send Money'),
+            e('div', {style:{fontSize:16,fontWeight:700,color:'#00a651'}}, '0118 556423')
+          ),
+          e('div', {style:{fontSize:12,fontWeight:600,color:P}}, 'KES 2,500')
+        ),
+        e('div', {style:{background:BG,borderRadius:10,padding:'12px 14px',display:'flex',justifyContent:'space-between',alignItems:'center'}},
+          e('div', null,
+            e('div', {style:{fontSize:11,color:MUT,marginBottom:2}}, 'Paybill'),
+            e('div', {style:{fontSize:15,fontWeight:700,color:P}}, '522522'),
+            e('div', {style:{fontSize:12,color:TXT}}, 'Account: 1350309257')
+          ),
+          e('div', {style:{fontSize:12,fontWeight:600,color:P}}, 'KES 2,500')
+        )
+      ),
+      e(Btn, {v:'danger',full:true,style:{padding:'13px'},onClick:function(){showT('Demo mode - no logout needed');}}, 'Sign Out')
+    )
+  );
+}
+
+// ---- APP ----
+function App() {
+  var tabState = useState('dashboard');
+  var tab = tabState[0]; var setTab = tabState[1];
+
+  var toastState = useState('');
+  var toast = toastState[0]; var setToast = toastState[1];
+
+  var paysState = useState(PAYS);
+  var pays = paysState[0]; var setPays = paysState[1];
+
+  var propSelState = useState(null);
+  var propSel = propSelState[0]; var setPropSel = propSelState[1];
+
+  var tenSelState = useState(null);
+  var tenSel = tenSelState[0]; var setTenSel = tenSelState[1];
+
+  var searchState = useState('');
+  var search = searchState[0]; var setSearch = searchState[1];
+
+  var filterState = useState('all');
+  var filter = filterState[0]; var setFilter = filterState[1];
+
+  var payFilterState = useState('all');
+  var payFilter = payFilterState[0]; var setPayFilter = payFilterState[1];
+
+  var showNewState = useState(false);
+  var showNew = showNewState[0]; var setShowNew = showNewState[1];
+
+  var today = new Date().toISOString().split('T')[0];
+  var newPState = useState({tid:'',amt:'',date:today,method:'M-Pesa',ref:''});
+  var newP = newPState[0]; var setNewP = newPState[1];
+
+  function showT(msg) { setToast(msg); }
+
+  var NAV = [
+    {id:'dashboard',icon:'🏠',label:'Home'},
+    {id:'properties',icon:'🏢',label:'Props'},
+    {id:'tenants',icon:'👥',label:'Tenants'},
+    {id:'payments',icon:'💳',label:'Payments'},
+    {id:'reports',icon:'📊',label:'Reports'},
+    {id:'more',icon:'',label:'More'}
+  ];
+
+  var content = null;
+  if (tab === 'dashboard') {
+    content = e(Dashboard, {properties:PROPS,units:UNITS,tenants:TENANTS,payments:pays,setTab:setTab,showT:showT});
+  } else if (tab === 'properties') {
+    content = e(Properties, {properties:PROPS,units:UNITS,tenants:TENANTS,showT:showT,sel:propSel,setSel:setPropSel});
+  } else if (tab === 'tenants') {
+    content = e(Tenants, {tenants:TENANTS,payments:pays,showT:showT,sel:tenSel,setSel:setTenSel,search:search,setSearch:setSearch,filter:filter,setFilter:setFilter});
+  } else if (tab === 'payments') {
+    content = e(Payments, {tenants:TENANTS,payments:pays,setPayments:setPays,showT:showT,filter:payFilter,setFilter:setPayFilter,showNew:showNew,setShowNew:setShowNew,newP:newP,setNewP:setNewP});
+  } else if (tab === 'reports') {
+    content = e(Reports, {tenants:TENANTS,payments:pays,units:UNITS,showT:showT});
+  } else if (tab === 'more') {
+    content = e(More, {tenants:TENANTS,showT:showT});
+  }
+
+  return e('div', {style:{height:'100vh',display:'flex',flexDirection:'column',background:BG}},
+    toast && e(Toast, {msg:toast,onHide:function(){setToast('');}}),
+    e('div', {style:{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}, content),
+    e('div', {style:{display:'flex',borderTop:'1px solid '+BRD,background:'#fff',flexShrink:0,boxShadow:'0 -2px 10px rgba(0,0,0,0.05)'}},
+      NAV.map(function(n) {
+        var active = tab === n.id;
+        return e('button', {key:n.id,onClick:function(){setTab(n.id);if(n.id!=='properties')setPropSel(null);if(n.id!=='tenants')setTenSel(null);},style:{flex:1,padding:'9px 2px',display:'flex',flexDirection:'column',alignItems:'center',gap:3,border:'none',background:'transparent',cursor:'pointer',fontFamily:'inherit'}},
+          e('span', {style:{fontSize:16,lineHeight:1}}, n.icon || '='),
+          e('span', {style:{fontSize:8,fontWeight:600,color:active?P:MUT,textTransform:'uppercase',letterSpacing:'0.04em'}}, n.label)
+        );
+      })
+    )
+  );
+}
+
+setTimeout(function() {
+  ReactDOM.createRoot(document.getElementById('root')).render(e(App, null));
+}, 100);
+</script>
+</body>
+</html>
